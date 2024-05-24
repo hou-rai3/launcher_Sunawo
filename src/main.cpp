@@ -7,11 +7,12 @@ InterruptIn button(D4);          // リミットスイッチ
 InterruptIn button_reset(PC_13); // 起動スイッチ
 BufferedSerial pc(USBTX, USBRX, 115200);
 CAN can(PA_11, PA_12, (int)1e6);
+int DJI_CAN = 0x200;
 
 int16_t motor_1 = 0;
 int16_t motor_2 = 0;
 int16_t motor_3 = 0;
-int16_t speed = 30000; // 16ビットの最大値
+int16_t speed = 0; // 16ビットの最大値
 
 int reset;
 int sw;
@@ -19,6 +20,7 @@ int sw;
 void Switch_Reset()
 {
     printf("Restart\n");
+    speed = 30000;
     motor_1 = speed;
     motor_2 = speed;
     int16_t output_1 = motor_1;
@@ -35,7 +37,7 @@ void Switch_Reset()
 void Switch_Stop()
 {
     printf("Stop\n");
-    int16_t speed = 0;
+    speed = 0;
     motor_1 = speed;
     motor_2 = speed;
 
@@ -60,9 +62,9 @@ int main()
 
     while (1)
     {
-        CANMessage msg0(0x200, DATA_1, 8);
-        CANMessage msg1(0x200, DATA_2, 8);
-        CANMessage msg2(0x200, DATA_3, 8);
+        CANMessage msg0(DJI_CAN, DATA_1, 8);
+        CANMessage msg1(DJI_CAN, DATA_2, 8);
+        CANMessage msg2(DJI_CAN, DATA_3, 8);
         can.write(msg0);
         can.write(msg1);
         can.write(msg2);
