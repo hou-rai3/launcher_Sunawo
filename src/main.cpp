@@ -1,4 +1,5 @@
 #include "mbed.h"
+#include "PID.hpp"
 uint8_t DATA[8] = {};
 InterruptIn button(PC_8);       // リミットスイッチ
 InterruptIn button_reset(PC_9); // 起動スイッチ
@@ -19,15 +20,15 @@ void Switch_Stop()
     printf("Stop\n");
     speed = 0; // 速度0
 
-    DATA[0] = speed & 0xFF;        // 下位バイト
-    DATA[1] = (speed >> 8) & 0xFF; // 上位バイト
-    DATA[2] = speed & 0xFF;        // 下位バイト
-    DATA[3] = (speed >> 8) & 0xFF; // 上位バイト
-    DATA[4] = speed & 0xFF;        // 下位バイト
-    DATA[5] = (speed >> 8) & 0xFF; // 上位バイト
+    DATA[0] =  (speed >> 8) & 0xFF;        // 上位バイト
+    DATA[1] = speed & 0xFF; // 下位バイト
+    DATA[2] =  (speed >> 8) & 0xFF;        // 上位バイト
+    DATA[3] = speed & 0xFF; // 上位バイト
+    DATA[4] =  (speed >> 8) & 0xFF;        // 上位バイト
+    DATA[5] = speed & 0xFF; // 上位バイト
 }
 
-int main()
+int main
 {
     button.mode(PullUp);
     button_reset.mode(PullUp);
@@ -45,13 +46,12 @@ int main()
         {
             printf("Restart\n");
             speed = 16000; // 8191; // 速度MAX
-
-            DATA[0] = speed & 0xFF; // 下位バイト
-            DATA[1] = (speed >> 8) & 0xFF;        // 上位バイト
-            DATA[2] =　speed & 0xFF; // 下位バイト
-            DATA[3] = (speed >> 8) & 0xFF;        // 上位バイト
-            DATA[4] =　speed & 0xFF; // 下位バイト
-            DATA[5] = (speed >> 8) & 0xFF;        // 上位バイト
+            DATA[0] = (speed >> 8) & 0xFF; // 上位バイト
+            DATA[1] = speed & 0xFF;        // 下位バイト
+            DATA[2] = (speed >> 8) & 0xFF; // 上位バイト
+            DATA[3] = speed & 0xFF;        // 下位バイト
+            DATA[4] = (speed >> 8) & 0xFF; // 上位バイト
+            DATA[5] = speed & 0xFF;        // 下位バイト
             pre = now;
         }
         CANMessage msg(DJI_ID, DATA, 8); // 送信
