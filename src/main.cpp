@@ -37,7 +37,7 @@ int main()
         if (now - pre > 1000ms && sw == 0)
         {
             printf("FIRE\n");
-            speed = 3000; // 速度MAX
+            speed = 6000; // 速度MAX
 
             int16_t signed_speed = static_cast<int16_t>(-speed);
             DATA[0] = (signed_speed >> 8) & 0xFF; // 上位バイト
@@ -57,13 +57,13 @@ int main()
             flag = true;
         }
 
-        if (flag == true && now - pre > 1000ms)
+        if (flag == true && now - pre > 500ms)
         {
             stop_motor(0);
             flag = false;
         }
 
-        if (now_1 - pre_1 > 30ms)
+        if (now_1 - pre_1 > 10ms)
         {
             CANMessage msg(DJI_ID, DATA, 8);
             if (can.write(msg))
