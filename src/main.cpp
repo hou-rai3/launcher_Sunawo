@@ -57,7 +57,7 @@ int main()
             flag = true;
         }
 
-        if (flag == true && now - pre > 300ms)
+        if (flag == true && now - pre > 700ms)
         {
             stop_motor(0);
             flag = false;
