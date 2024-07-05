@@ -13,7 +13,7 @@ FirstPenguin penguin_2(FP_2, can);
 DigitalIn encoderA(PB_13); // A相のピン A0からA5
 DigitalIn encoderB(PB_14); // B相のピン A0からA5
 
-bool stop_motor(int speed)
+void stop_motor(int speed)
 {
     printf("STOP\n");
 
@@ -69,7 +69,6 @@ int main()
     {
         auto now = HighResClock::now();
         auto now_1 = HighResClock::now();
-
         bool A_now = encoderA.read();
         bool B_now = encoderB.read();
 
