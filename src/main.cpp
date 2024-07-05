@@ -1,5 +1,7 @@
 #include "mbed.h"
 #include "FP.hpp"
+#include "counter.hpp"
+
 BufferedSerial pc(USBTX, USBRX, 115200);
 CAN can(PA_11, PA_12, (int)1e6);
 
@@ -10,9 +12,8 @@ FirstPenguin penguin_2(FP_2, can);
 
 DigitalIn encoderA(PB_13); // A相のピン A0からA5
 DigitalIn encoderB(PB_14); // B相のピン A0からA5
-bool flag_reset = false;
 
-void stop_motor(int speed)
+bool stop_motor(int speed)
 {
     printf("STOP\n");
 
@@ -23,60 +24,12 @@ void stop_motor(int speed)
     penguin_1.pwm[3] = -speed;
     penguin_2.pwm[0] = -speed;
     penguin_2.pwm[1] = -speed;
-    flag_reset = true;
-}
-
-int launcher_counter(bool A_pre, bool B_pre, bool A_now, bool B_now, int counter)
-{
-    if (A_pre == 0 && B_pre == 0)
-    {
-        if (A_now == 1 && B_now == 0)
-        {
-            counter++;
-        }
-        else if (A_now == 0 && B_now == 1)
-        {
-            counter--;
-        }
-    }
-    else if (A_pre == 1 && B_pre == 0)
-    {
-        if (A_now == 1 && B_now == 1)
-        {
-            counter++;
-        }
-        else if (A_now == 0 && B_now == 0)
-        {
-            counter--;
-        }
-    }
-    else if (A_pre == 1 && B_pre == 1)
-    {
-        if (A_now == 0 && B_now == 1)
-        {
-            counter++;
-        }
-        else if (A_now == 1 && B_now == 0)
-        {
-            counter--;
-        }
-    }
-    else if (A_pre == 0 && B_pre == 1)
-    {
-        if (A_now == 0 && B_now == 0)
-        {
-            counter++;
-        }
-        else if (A_now == 1 && B_now == 1)
-        {
-            counter--;
-        }
-    }
-    return counter;
 }
 
 void slowmove(int speed)
 {
+    printf("slowmove Ready\n");
+
     penguin_1.pwm[0] = speed;
     penguin_1.pwm[1] = speed;
     penguin_1.pwm[2] = speed;
@@ -86,15 +39,20 @@ void slowmove(int speed)
     penguin_2.pwm[1] = -speed;
 }
 
+void button_stop_pressed()
+{
+    printf("button Read");
+    stop_motor(0);
+}
+
 int main()
 {
-
-    int flag = false;
-
     InterruptIn button_reset(PC_9);
     InterruptIn button_stop(PC_8);
     button_reset.mode(PullUp);
     button_stop.mode(PullUp);
+
+    button_stop.fall(&button_stop_pressed); // button_stopが押された時にstop_motorを実行
 
     auto pre = HighResClock::now();
     auto pre_1 = pre;
@@ -104,14 +62,14 @@ int main()
     bool B_pre = 0;
     int counter = 0;
     int speed = 0;
+    int Count_Limit = -60150;
+    bool flag_reset = false;
 
     while (1)
     {
         auto now = HighResClock::now();
         auto now_1 = HighResClock::now();
 
-        bool sw = button_reset.read();
-        bool sw1 = button_stop.read();
         bool A_now = encoderA.read();
         bool B_now = encoderB.read();
 
@@ -120,11 +78,11 @@ int main()
         A_pre = A_now;
         B_pre = B_now;
 
-        if (now - pre > 1000ms && sw1 == 0)
+        if (now - pre > 500ms && !button_stop.read())
         {
             stop_motor(0);
+            flag_reset = true;
             counter = 0;
-
             // slowmoveを開始する時間を設定
             slow_move_start_time = HighResClock::now();
             slow_move_started = true;
@@ -133,25 +91,23 @@ int main()
         }
 
         // slowmoveが開始されてから100ms経過した場合にslowmoveを実行
-        if (slow_move_started && now - slow_move_start_time > 500ms)
+        if (slow_move_started && now - slow_move_start_time > 1000ms)
         {
             slowmove(2000);
 
             slow_move_started = false; // slowmoveの実行後はフラグをリセット
         }
-        if (counter < -60150 && flag_reset)
+        if (counter < Count_Limit && flag_reset)
         {
-            printf("Reset\n");
+            printf("count\n");
             stop_motor(0);
             counter = 0;
             flag_reset = false;
         }
-        if (now - pre > 1000ms && sw == 0)
+        if (now - pre > 1000ms && !button_reset.read())
         {
             printf("FIRE\n");
-            counter = 0;
-
-            speed = 27000;
+            speed = 30000;
 
             penguin_1.pwm[0] = speed;
             penguin_1.pwm[1] = speed;
@@ -162,10 +118,9 @@ int main()
             penguin_2.pwm[1] = -speed;
 
             pre = now;
-            flag = true;
         }
 
-        if (now_1 - pre_1 > 20ms)
+        if (now_1 - pre_1 > 10ms)
         {
             if (penguin_1.send() && penguin_2.send())
             {
