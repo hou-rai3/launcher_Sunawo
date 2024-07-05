@@ -11,6 +11,7 @@ FirstPenguin penguin_2(FP_2, can);
 DigitalIn encoderA(PB_13); // A相のピン A0からA5
 DigitalIn encoderB(PB_14); // B相のピン A0からA5
 bool flag_reset = false;
+
 void stop_motor(int speed)
 {
     printf("STOP\n");
@@ -24,6 +25,7 @@ void stop_motor(int speed)
     penguin_2.pwm[1] = -speed;
     flag_reset = true;
 }
+
 int launcher_counter(bool A_pre, bool B_pre, bool A_now, bool B_now, int counter)
 {
     if (A_pre == 0 && B_pre == 0)
@@ -72,10 +74,9 @@ int launcher_counter(bool A_pre, bool B_pre, bool A_now, bool B_now, int counter
     }
     return counter;
 }
-void slowmove()
-{
-    int speed = 2000;
 
+void slowmove(int speed)
+{
     penguin_1.pwm[0] = speed;
     penguin_1.pwm[1] = speed;
     penguin_1.pwm[2] = speed;
@@ -84,6 +85,7 @@ void slowmove()
     penguin_2.pwm[0] = -speed;
     penguin_2.pwm[1] = -speed;
 }
+
 int main()
 {
 
@@ -131,15 +133,15 @@ int main()
         }
 
         // slowmoveが開始されてから100ms経過した場合にslowmoveを実行
-        if (slow_move_started && now - slow_move_start_time > 1000ms)
+        if (slow_move_started && now - slow_move_start_time > 500ms)
         {
-            slowmove();
+            slowmove(2000);
 
             slow_move_started = false; // slowmoveの実行後はフラグをリセット
         }
         if (counter < -60150 && flag_reset)
         {
-            printf("count\n");
+            printf("Reset\n");
             stop_motor(0);
             counter = 0;
             flag_reset = false;
@@ -147,6 +149,8 @@ int main()
         if (now - pre > 1000ms && sw == 0)
         {
             printf("FIRE\n");
+            counter = 0;
+
             speed = 27000;
 
             penguin_1.pwm[0] = speed;
