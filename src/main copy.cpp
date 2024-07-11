@@ -12,6 +12,7 @@ FirstPenguin penguin_2(FP_2, can);
 DigitalIn encoderA(PB_13);
 DigitalIn encoderB(PB_14);
 
+int i = 0;
 void stop_motor(int speed)
 {
     printf("STOP\n");
@@ -27,6 +28,7 @@ void stop_motor(int speed)
 
 void button_stop_pressed()
 {
+    printf("stop");
     stop_motor(0);
 }
 
@@ -40,7 +42,7 @@ int main()
     auto pre = HighResClock::now();
     auto pre_1 = pre;
     int speed = 0;
-    button_stop.fall(button_stop_pressed);
+    // button_stop.fall(button_stop_pressed);
 
     while (1)
     {
@@ -48,7 +50,7 @@ int main()
         auto now_1 = HighResClock::now();
 
         bool sw = button_fire.read();
-
+        bool sw1 = button_stop.read();
         if (now - pre > 1000ms && sw == 0)
         {
             printf("FIRE\n");
@@ -64,16 +66,24 @@ int main()
 
             pre = now;
         }
+        if (!sw1 && now - pre > 1000ms)
+        {
+            stop_motor(0);
 
+            pre = now;
+        }
         if (now_1 - pre_1 > 20ms)
         {
             if (penguin_1.send() && penguin_2.send())
             {
-                printf("can OK\n");
+                printf("count =  %d :  OK\n", i);
+                i++;
             }
             else
             {
-                printf("can't Message\n");
+                printf("Can't send Message\n");
+                printf("CAN Bus Error Status: %d\n", can.rderror());
+                printf("CAN Bus Write Error Count: %d\n", can.tderror());
             }
             pre_1 = now_1;
         }
