@@ -7,15 +7,17 @@ public:
     static bool stop_move_lock;
     static bool Higher_flag;
     static bool Lower_flag;
-    static bool sw;
-    static bool sw_1;
-    static bool sw_2;
-    static bool sw_3;
+    static bool Higher_fire;
+    static bool Higher_stop;
+    static bool Lower_fire;
+    static bool Lower_stop;
+    static bool Reload;
 };
 class Buttons
 {
 public:
     // button
+    static InterruptIn Reload;
     static InterruptIn Higher_fire;
     static InterruptIn Higher_stop;
     static InterruptIn Lower_fire;
@@ -24,6 +26,7 @@ public:
 class ints
 {
 public:
+    static int Reload;
     static int counter;
     static int Higher_count;
     static int Lower_count;
@@ -35,16 +38,20 @@ public:
 bool Flags::stop_move_lock = true;
 bool Flags::Higher_flag = false;
 bool Flags::Lower_flag = false;
-bool Flags::sw = false;
-bool Flags::sw_1 = false;
-bool Flags::sw_2 = false;
-bool Flags::sw_3 = false;
+bool Flags::Higher_fire = false;
+bool Flags::Higher_stop = false;
+bool Flags::Lower_fire = false;
+bool Flags::Lower_stop = false;
+bool Flags::Reload = false;
 
+InterruptIn Buttons::Reload(PC_1);
 InterruptIn Buttons::Higher_fire(PC_8);
 InterruptIn Buttons::Higher_stop(PC_9);
 InterruptIn Buttons::Lower_fire(PC_0);
 InterruptIn Buttons::Lower_stop(PC_11);
 // ints
+
+int ints::Reload = 0;
 int ints::Higher_count = 0;
 int ints::Lower_count = 0;
 int ints::Higher_speed = 30000;
