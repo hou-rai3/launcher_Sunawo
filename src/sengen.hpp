@@ -4,74 +4,84 @@
 class Flags
 {
 public:
-    static bool stop_move_lock;
+    static bool Higher_fire;
+    static bool Lower_fire;
     static bool Higher_flag;
     static bool Lower_flag;
-    static bool Higher_fire;
     static bool Higher_stop;
-    static bool Lower_fire;
     static bool Lower_stop;
-    static bool Reload;
+    static bool Higher_Reload;
+    static bool Lower_Reload;
 };
 class Buttons
 {
 public:
-    // button
-    static InterruptIn Reload;
     static InterruptIn Higher_fire;
-    static InterruptIn Higher_stop;
     static InterruptIn Lower_fire;
+    static InterruptIn Higher_stop;
     static InterruptIn Lower_stop;
+    static InterruptIn Higher_Reload;
+    static InterruptIn Lower_Reload;
 };
 class ints
 {
 public:
-    static int Reload;
-    static int counter;
-    static int Higher_count;
-    static int Lower_count;
+    static int Higher_fire;
+    static int Lower_fire;
+    static int Higher_Reload;
+    static int Lower_Reload;
     static int Higher_speed;
     static int Lower_speed;
-    static int Count_Limit;
+    static int Higher_count;
+    static int Lower_count;
 };
 // Flags
-bool Flags::stop_move_lock = true;
+bool Flags::Higher_fire = false;
+bool Flags::Lower_fire = false;
 bool Flags::Higher_flag = false;
 bool Flags::Lower_flag = false;
-bool Flags::Higher_fire = false;
 bool Flags::Higher_stop = false;
-bool Flags::Lower_fire = false;
 bool Flags::Lower_stop = false;
-bool Flags::Reload = false;
+bool Flags::Higher_Reload = false;
+bool Flags::Lower_Reload = false;
 
-InterruptIn Buttons::Reload(PC_1);
-InterruptIn Buttons::Higher_fire(PC_8);
-InterruptIn Buttons::Higher_stop(PC_9);
-InterruptIn Buttons::Lower_fire(PC_0);
-InterruptIn Buttons::Lower_stop(PC_11);
-// ints
+InterruptIn Buttons::Lower_Reload(PC_4);
+InterruptIn Buttons::Higher_Reload(PC_5);
+InterruptIn Buttons::Higher_stop(PC_8);
+InterruptIn Buttons::Lower_stop(PC_9);
+InterruptIn Buttons::Higher_fire(PC_12);
+InterruptIn Buttons::Lower_fire(PC_13);
 
-int ints::Reload = 0;
+// intsint ints::Lower_fire = 0;
+int ints::Higher_fire = 0;
+int ints::Higher_speed = 22000;
+int ints::Lower_speed = 31000;
+int ints::Higher_Reload = 0;
+int ints::Lower_Reload = 0;
 int ints::Higher_count = 0;
 int ints::Lower_count = 0;
-int ints::Higher_speed = 30000;
-int ints::Lower_speed = 30000;
-int ints::Count_Limit = -195;
+
+// timer
+auto pre = HighResClock::now();
+auto pre_1 = pre;
 
 // 通信
 BufferedSerial pc(USBTX, USBRX, 115200);
 // can
 CAN can(PA_11, PA_12, (int)1e6);
+CAN R_can(PB_12, PB_13, (int)1e6);
+CANMessage msg;
 constexpr uint32_t FP_1 = 35;
 constexpr uint32_t FP_2 = 40;
 FirstPenguin penguin_1(FP_1, can);
 FirstPenguin penguin_2(FP_2, can);
+uint16_t Data[4] = {};
 
-// timer
-auto pre = HighResClock::now();
-auto slow_move_start_time = HighResClock::now();
-auto last_debounce_time = HighResClock::now();
-auto pre_1 = pre;
-constexpr auto debounce_delay = 50ms;
+typedef struct
+{
+    unsigned char circle : 1;
+    unsigned char cross : 1;
+    unsigned char rectangle : 1;
+} PS2Con;
 
 #endif
