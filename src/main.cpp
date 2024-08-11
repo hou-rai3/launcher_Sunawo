@@ -32,7 +32,7 @@ void handle_higher()
     {
         Flags::Higher_flag = true;
         motor_move(3000);
-        printf("Higher_Reload\n");
+        // printf("Higher_Reload\n");
     }
     if (ints::Higher_count == 0)
     {
@@ -56,7 +56,7 @@ void handle_lower()
     {
         Flags::Lower_flag = true;
         fire_under(3000);
-        printf("Lower_Reload\n");
+        // printf("Lower_Reload\n");
     }
     if (ints::Lower_count == 0)
     {
@@ -80,7 +80,7 @@ void higher_reload()
     {
         Flags::Higher_Reload = true;
         motor_move(0);
-        printf("Higher_Reload\n");
+        // printf("Higher_Reload\n");
     }
     if (ints::Higher_Reload == 0)
     {
@@ -104,7 +104,7 @@ void lower_reload()
     {
         Flags::Lower_Reload = true;
         fire_under(0);
-        printf("Lower_Reload\n");
+        // printf("Lower_Reload\n");
     }
     if (ints::Lower_Reload == 0)
     {
@@ -128,7 +128,7 @@ void higher_fire()
     {
         Flags::Higher_fire = true;
         motor_move(ints::Higher_speed);
-        printf("Higher_fire\n");
+        // printf("Higher_fire\n");
     }
     if (ints::Higher_fire == 0)
     {
@@ -152,7 +152,7 @@ void lower_fire()
     {
         Flags::Lower_fire = true;
         fire_under(ints::Lower_speed);
-        printf("Lower_fire\n");
+        // printf("Lower_fire\n");
     }
     if (ints::Lower_fire == 0)
     {
@@ -190,6 +190,17 @@ void Setup()
     Buttons::Lower_Reload.mode(PullUp);
 }
 
+void controler()
+
+{
+    if (can.read(msg) && msg.id == 0x7ff)
+    {
+        Data[0] = (msg.data[0] >> 7) & 0x01; // circle
+        Data[1] = (msg.data[1] >> 7) & 0x01; // cross
+        Data[2] = (msg.data[2] >> 7) & 0x01; // rectangle
+    }
+}
+
 int main()
 {
     Setup();
@@ -197,19 +208,13 @@ int main()
     {
         read_swich();
         read_stop();
-
-        if (can.read(msg) && msg.id == 0x7ff)
-        {
-            Data[0] = (msg.data[0] >> 7) & 0x01; // circle
-            Data[1] = (msg.data[1] >> 7) & 0x01; // cross
-            Data[2] = (msg.data[2] >> 7) & 0x01; // rectangle
-        }
-
+        controler();
+        
         auto now = HighResClock::now();
         auto now_1 = HighResClock::now();
+
         if (now - pre > 1000ms && Data[0] == 1) // 上発射
         {
-            printf("fire\n");
             motor_move(ints::Higher_speed);
             pre = now;
         }
@@ -220,7 +225,6 @@ int main()
         }
         if (now - pre > 1000ms && !Flags::Higher_fire) // 上発射
         {
-            printf("fire\n");
             motor_move(ints::Higher_speed);
             pre = now;
         }
@@ -255,13 +259,3 @@ int main()
         }
     }
 }
-// if (now - pre > 1000ms && Flags::Higher_fire) // 上発射
-// {
-//     motor_move(ints::Higher_speed);
-//     pre = now;
-// }
-// if (now - pre > 500ms && !Flags::Lower_fire) // 下発射
-// {
-//     fire_under(ints::Lower_speed);
-//     pre = now;
-// }
