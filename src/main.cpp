@@ -2,16 +2,8 @@
 #include "FP.hpp"
 #include "sengen.hpp"
 
-bool Higher_lock = true;
-bool Lowre_lock = true;
-
-bool Left_UP = false;
-bool Left_DOWN = false;
-
-bool Right_UP = false;
-bool Right_DOWN = false;
-// bool test_up = false;
-// bool test_down = false;
+bool Higher_lock = false;
+bool Lowre_lock = false;
 
 void motor_move(int speed)
 {
@@ -29,12 +21,17 @@ void fire_under(int speed)
 
 void handle_higher()
 {
-    ints::Higher_count += Flags::Higher_stop ? -1 : 1;
-    ints::Higher_count = clamp(ints::Higher_count, 0, 2000);
-    if (ints::Higher_count == 600 && !Flags::Higher_flag && !Higher_lock)
+    // printf("Higher_count==%d\n", ints::Higher_count);
+    // printf("Lower_count==%d\n", ints::Lower_count);
+    // printf("Higher_Reload==%d\n", ints::Higher_Reload);
+    // printf("Lower_Reload==%d\n", ints::Lower_Reload);
+    ints::Higher_count += !Flags::Higher_stop ? 1 : -1;
+    ints::Higher_count = clamp(ints::Higher_count, 0, 15);
+    if (ints::Higher_count == 10 && !Flags::Higher_flag && !Higher_lock)
     {
         Flags::Higher_flag = true;
         motor_move(3000);
+        printf("handle_higher\n");
     }
     if (ints::Higher_count == 0)
     {
@@ -44,12 +41,13 @@ void handle_higher()
 
 void handle_lower()
 {
-    ints::Lower_count += Flags::Lower_stop ? -1 : 1;
-    ints::Lower_count = clamp(ints::Lower_count, 0, 1000);
-    if (ints::Lower_count == 600 && !Flags::Lower_flag && !Lowre_lock)
+    ints::Lower_count += !Flags::Lower_stop ? 1 : -1;
+    ints::Lower_count = clamp(ints::Lower_count, 0, 15);
+    if (ints::Lower_count == 10 && !Flags::Lower_flag && !Lowre_lock)
     {
         Flags::Lower_flag = true;
         fire_under(3000);
+        printf("handle_lower\n");
     }
     if (ints::Lower_count == 0)
     {
@@ -59,13 +57,14 @@ void handle_lower()
 
 void higher_reload()
 {
-    ints::Higher_Reload += Flags::Higher_Reload ? 1 : -1;
-    ints::Higher_Reload = clamp(ints::Higher_Reload, 0, 500);
-    if (ints::Higher_Reload == 200 && !Flags::Higher_Reload)
+    ints::Higher_Reload += !Flags::Higher_Reload ? -1 : 1;
+    ints::Higher_Reload = clamp(ints::Higher_Reload, 0, 15);
+    if (ints::Higher_Reload == 10 && !Flags::Higher_Reload)
     {
+        Higher_lock = true;
         Flags::Higher_Reload = true;
         motor_move(0);
-        Higher_lock = true;
+        printf("higher_reload\n");
     }
     if (ints::Higher_Reload == 0)
     {
@@ -75,13 +74,14 @@ void higher_reload()
 
 void lower_reload()
 {
-    ints::Lower_Reload += Flags::Lower_Reload ? 1 : -1;
-    ints::Lower_Reload = clamp(ints::Lower_Reload, 0, 100);
-    if (ints::Lower_Reload == 50 && !Flags::Lower_Reload)
+    ints::Lower_Reload += !Flags::Lower_Reload ? -1 : 1;
+    ints::Lower_Reload = clamp(ints::Lower_Reload, 0, 15);
+    if (ints::Lower_Reload == 10 && !Flags::Lower_Reload)
     {
+        Lowre_lock = true;
         Flags::Lower_Reload = true;
         fire_under(0);
-        Lowre_lock = true;
+        printf("lower_reload\n");
     }
     if (ints::Lower_Reload == 0)
     {
@@ -92,8 +92,8 @@ void lower_reload()
 void higher_fire()
 {
     ints::Higher_fire += Flags::Higher_fire ? 1 : -1;
-    ints::Higher_fire = clamp(ints::Higher_fire, 0, 100);
-    if (ints::Higher_fire == 50 && !Flags::Higher_fire)
+    ints::Higher_fire = clamp(ints::Higher_fire, 0, 50);
+    if (ints::Higher_fire == 20 && !Flags::Higher_fire)
     {
         Flags::Higher_fire = true;
         motor_move(ints::Higher_speed);
@@ -107,8 +107,8 @@ void higher_fire()
 void lower_fire()
 {
     ints::Lower_fire += Flags::Lower_fire ? 1 : -1;
-    ints::Lower_fire = clamp(ints::Lower_fire, 0, 150);
-    if (ints::Lower_fire == 100 && !Flags::Lower_fire)
+    ints::Lower_fire = clamp(ints::Lower_fire, 0, 50);
+    if (ints::Lower_fire == 30 && !Flags::Lower_fire)
     {
         Flags::Lower_fire = true;
         fire_under(ints::Lower_speed);
@@ -131,138 +131,22 @@ void read_swich()
 {
     Flags::Higher_stop = Buttons::Higher_stop.read();
     Flags::Lower_stop = Buttons::Lower_stop.read();
-    Flags::Higher_fire = Buttons::Higher_fire.read();
-    Flags::Lower_fire = Buttons::Lower_fire.read();
     Flags::Higher_Reload = Buttons::Higher_Reload.read();
     Flags::Lower_Reload = Buttons::Lower_Reload.read();
-
-    Flags::Left_higher = Buttons::Left_higher.read();
-    Flags::Left_lower = Buttons::Left_lower.read();
-    Flags::Right_higher = Buttons::Right_higher.read();
-    Flags::Right_lower = Buttons::Right_lower.read();
 }
 
 void Setup()
 {
     Higher_lock = true;
     Lowre_lock = true;
-    Buttons::Higher_fire.mode(PullUp);
-    Buttons::Lower_fire.mode(PullUp);
     Buttons::Higher_stop.mode(PullUp);
     Buttons::Lower_stop.mode(PullUp);
     Buttons::Higher_Reload.mode(PullUp);
     Buttons::Lower_Reload.mode(PullUp);
-    Buttons::Left_higher.mode(PullUp);
-    Buttons::Left_lower.mode(PullUp);
-    Buttons::Right_higher.mode(PullUp);
-    Buttons::Right_lower.mode(PullUp);
 }
 
 void controler()
 {
-    // if (can.read(msg) && msg.id == 0x7ff)
-    // {
-    //     PS2Con controller;
-    //     memcpy(&controller, msg.data, sizeof(PS2Con));
-    // if (controller.L1 == 0 && controller.L2 == 1 && !Left_UP && !Flags::Left_higher)
-    // {
-    //     pwm[0] = -16000;
-    //     printf("REMOVE\n");
-    //     Left_DOWN = true;
-    // }
-    // if (!Flags::Left_higher && Left_UP)
-    // {
-    //     printf("Left_higher STOP\n");
-    //     Left_UP = false;
-    //     pwm[0] = 0;
-    // }
-    // if (controller.L1 == 1 && controller.L2 == 0)
-    // {
-    //     pwm[0] = -16000;
-    //     printf("testUP\n");
-    //     Left_UP = true;
-    // }
-    // if (controller.L1 == 0 && controller.L2 == 0)
-    // {
-    //     pwm[0] = 0;
-    // }
-    // if (controller.L1 == 0 && controller.L2 == 1)
-    // {
-    //     pwm[0] = 16000;
-    //     printf("testdown\n");
-    //     Left_DOWN = true;
-    // }
-    // if (!Flags::Left_lower && Left_DOWN)
-    // {
-    //     Left_DOWN = false;
-    //     pwm[0] = 0;
-    // }
-    // if (controller.L1 == 1 && controller.L2 == 0 && !Left_DOWN && !Flags::Left_lower)
-    // {
-    //     pwm[0] = -16000;
-
-    //     Left_UP = true;
-    // }
-    // ///////////////////////////////////////////////////////
-    // if (controller.R1 == 0 && controller.R2 == 1 && !Right_UP && !Flags::Right_higher)
-    // {
-    //     pwm[0] = 16000;
-    //     printf("REMOVE\n");
-    //     Right_DOWN = true;
-    // }
-    // if (!Flags::Right_higher && Right_UP)
-    // {
-    //     printf("Right_higher STOP\n");
-    //     Right_UP = false;
-    //     pwm[0] = 0;
-    // }
-    // if (controller.R1 == 1 && controller.R2 == 0)
-    // {
-    //     pwm[0] = 16000;
-    //     printf("testUP\n");
-    //     Right_UP = true;
-    // }
-    // if (controller.R1 == 0 && controller.R2 == 0)
-    // {
-    //     pwm[0] = 0;
-    // }
-    // if (controller.R1 == 0 && controller.R2 == 1)
-    // {
-    //     pwm[0] = -16000;
-    //     printf("testdown\n");
-    //     Right_DOWN = true;
-    // }
-    // if (!Flags::Right_lower && Right_DOWN)
-    // {
-    //     Right_DOWN = false;
-    //     pwm[0] = 0;
-    // }
-    // if (controller.R1 == 1 && controller.R2 == 0 && !Right_DOWN && !Flags::Right_lower)
-    // {
-    //     pwm[0] = 16000;
-
-    //     Right_UP = true;
-    // }
-
-    // auto now = HighResClock::now();
-    // if (now - pre > 1000ms && controller.Circle == 1 && Higher_lock)
-    // {
-    //     Higher_lock = false;
-    //     motor_move(ints::Higher_speed);
-    //     pre = now;
-    // }
-    // if (now - pre > 500ms && controller.Square == 1 && Lowre_lock)
-    // {
-    //     Lowre_lock = false;
-    //     fire_under(ints::Lower_speed);
-    //     pre = now;
-    // }
-    // printf("Circle: %d, Cross: %d, Square: %d, Triangle: %d\n", controller.Circle, controller.Cross, controller.Square, controller.Triangle);
-    // printf("Up: %d, Right: %d, Down: %d, Left: %d\n", controller.Up, controller.Right, controller.Down, controller.Left);
-    // printf("L2: %d, R2: %d, L1: %d, R1: %d\n", controller.L2, controller.R2, controller.L1, controller.R1);
-    // printf("L3: %d, R3: %d, Start: %d, Select: %d\n", controller.L3, controller.R3, controller.Start, controller.Select);
-
-    // }
     if (can.read(msg) && msg.id == 0x7ff)
     {
         PS2Con controller;
@@ -284,90 +168,40 @@ void controler()
         controller.R3 = (msg.data[5] >> 5) & 0x01;
         controller.Start = (msg.data[5] >> 6) & 0x01;
         controller.Select = (msg.data[5] >> 7) & 0x01;
-        printf("Circle: %d, Cross: %d, Square: %d, Triangle: %d\n", controller.Circle, controller.Cross, controller.Square, controller.Triangle);
-        printf("Up: %d, Right: %d, Down: %d, Left: %d\n", controller.Up, controller.Right, controller.Down, controller.Left);
-        printf("L2: %d, R2: %d, L1: %d, R1: %d\n", controller.L2, controller.R2, controller.L1, controller.R1);
-        printf("L3: %d, R3: %d, Start: %d, Select: %d\n", controller.L3, controller.R3, controller.Start, controller.Select);
-        if (controller.L1 == 0 && controller.L2 == 1 && !Left_UP && !Flags::Left_higher)
-        {
-            pwm[0] = -16000;
-            printf("REMOVE\n");
-            Left_DOWN = true;
-        }
-        if (!Flags::Left_higher && Left_UP)
-        {
-            printf("Left_higher STOP\n");
-            Left_UP = false;
-            pwm[0] = 0;
-        }
-        if (controller.L1 == 1 && controller.L2 == 0)
-        {
-            pwm[0] = -16000;
-            printf("testUP\n");
-            Left_UP = true;
-        }
-        if (controller.L1 == 0 && controller.L2 == 0)
-        {
-            pwm[0] = 0;
-        }
-        if (controller.L1 == 0 && controller.L2 == 1)
-        {
-            pwm[0] = 16000;
-            printf("testdown\n");
-            Left_DOWN = true;
-        }
-        if (!Flags::Left_lower && Left_DOWN)
-        {
-            Left_DOWN = false;
-            pwm[0] = 0;
-        }
-        if (controller.L1 == 1 && controller.L2 == 0 && !Left_DOWN && !Flags::Left_lower)
-        {
-            pwm[0] = -16000;
 
-            Left_UP = true;
+        // printf("Circle: %d, Cross: %d, Square: %d, Triangle: %d\n", controller.Circle, controller.Cross, controller.Square, controller.Triangle);
+        // printf(" Right: %d, DOWN: %d\n", controller.Right, controller.Down);
+        // printf(" R1: %d\n", controller.R1);
+        // printf("L3: %d, R3: %d, Start: %d, Select: %d\n", controller.L3, controller.R3, controller.Start, controller.Select);
+        ///////////////////////////////////////////////////////
+        if (controller.L1 == 1)
+        {
+            pwm[1] = -10000;
+        }
+        if (controller.L1 == 0 && controller.Down == 0)
+        {
+            pwm[1] = 0;
+        }
+
+        if (controller.Down == 1)
+        {
+            pwm[1] = 10000;
         }
         ///////////////////////////////////////////////////////
-        if (controller.R1 == 0 && controller.R2 == 1 && !Right_UP && !Flags::Right_higher)
+        if (controller.R1 == 1)
         {
-            pwm[0] = 16000;
-            printf("REMOVE\n");
-            Right_DOWN = true;
+            pwm[3] = 10000;
         }
-        if (!Flags::Right_higher && Right_UP)
+        if (controller.R1 == 0 && controller.Right == 0)
         {
-            printf("Right_higher STOP\n");
-            Right_UP = false;
-            pwm[0] = 0;
-        }
-        if (controller.R1 == 1 && controller.R2 == 0)
-        {
-            pwm[0] = 16000;
-            printf("testUP\n");
-            Right_UP = true;
-        }
-        if (controller.R1 == 0 && controller.R2 == 0)
-        {
-            pwm[0] = 0;
-        }
-        if (controller.R1 == 0 && controller.R2 == 1)
-        {
-            pwm[0] = -16000;
-            printf("testdown\n");
-            Right_DOWN = true;
-        }
-        if (!Flags::Right_lower && Right_DOWN)
-        {
-            Right_DOWN = false;
-            pwm[0] = 0;
-        }
-        if (controller.R1 == 1 && controller.R2 == 0 && !Right_DOWN && !Flags::Right_lower)
-        {
-            pwm[0] = 16000;
-
-            Right_UP = true;
+            pwm[3] = 0;
         }
 
+        if (controller.Right == 1)
+        {
+            pwm[3] = -10000;
+        }
+        ///////////////////////////////////////////////////////
         auto now = HighResClock::now();
         if (now - pre > 1000ms && controller.Circle == 1 && Higher_lock)
         {
@@ -375,7 +209,7 @@ void controler()
             motor_move(ints::Higher_speed);
             pre = now;
         }
-        if (now - pre > 500ms && controller.Square == 1 && Lowre_lock)
+        if (now - pre > 1000ms && controller.Square == 1 && Lowre_lock)
         {
             Lowre_lock = false;
             fire_under(ints::Lower_speed);
@@ -389,6 +223,15 @@ void can_send()
     auto now_1 = HighResClock::now();
     if (now_1 - pre_1 > 30ms)
     {
+        printf(
+            "Higher_Reload = %1d  "
+            "Lower_Reload = %2d  "
+            "Higher_stop = %3d  "
+            "Lower_stop = %4d\n",
+            Flags::Higher_Reload,
+            Flags::Lower_Reload,
+            Flags::Higher_stop,
+            Flags::Lower_stop);
         CANMessage msg1(1, (const uint8_t *)pwm, 8);
         can.write(msg1);
         if (penguin_1.send() && penguin_2.send())
@@ -411,23 +254,6 @@ void can_send()
     }
 }
 
-void read_fire()
-{
-
-    // if (now - pre > 1000ms && !Flags::Higher_fire && Higher_lock)
-    // {
-    //     Higher_lock = false;
-    //     motor_move(ints::Higher_speed);
-    //     pre = now;
-    // }
-    // if (now - pre > 500ms && !Flags::Lower_fire && Lowre_lock)
-    // {
-    //     Lowre_lock = false;
-    //     fire_under(ints::Lower_speed);
-    //     pre = now;
-    // }
-}
-
 int main()
 {
     Setup();
@@ -436,7 +262,6 @@ int main()
         read_swich();
         read_stop();
         controler();
-        read_fire();
         can_send();
     }
 }
