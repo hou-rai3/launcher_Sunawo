@@ -5,6 +5,9 @@
 bool Higher_lock = false;
 bool Lowre_lock = false;
 
+int output_int16_zero = 0;
+int signed_speed = 0;
+int speed = 10000;
 void motor_move(int speed)
 {
     penguin_1.pwm[1] = -speed;
@@ -173,33 +176,48 @@ void controler()
         // printf(" Right: %d, DOWN: %d\n", controller.Right, controller.Down);
         // printf(" R1: %d\n", controller.R1);
         // printf("L3: %d, R3: %d, Start: %d, Select: %d\n", controller.L3, controller.R3, controller.Start, controller.Select);
+
         ///////////////////////////////////////////////////////
         if (controller.L1 == 1)
         {
-            pwm[1] = -10000;
+            printf("L1\n");
+            signed_speed = static_cast<int16_t>(10000);
+            C610[4] = signed_speed & 0xFF;         // 下位バイト
+            C610[5] = -(signed_speed >> 8) & 0xFF; // 上位バイト
         }
         if (controller.L1 == 0 && controller.Down == 0)
         {
-            pwm[1] = 0;
+            C610[4] = output_int16_zero & 0xFF;        // 下位バイト
+            C610[5] = (output_int16_zero >> 8) & 0xFF; // 上位バイト
         }
 
         if (controller.Down == 1)
         {
-            pwm[1] = 10000;
+            printf("Down\n");
+            signed_speed = static_cast<int16_t>(10000);
+            C610[4] = -signed_speed & 0xFF;       // 下位バイト
+            C610[5] = (signed_speed >> 8) & 0xFF; // 上位バイト
         }
         ///////////////////////////////////////////////////////
         if (controller.R1 == 1)
         {
-            pwm[3] = 10000;
+            signed_speed = static_cast<int16_t>(10000);
+            C610[6] = -signed_speed & 0xFF;        // 下位バイト
+            C610[7] = (signed_speed >> 8) & 0xFF; // 上位バイト
+            printf("signed_speed%d\n,", signed_speed);
         }
         if (controller.R1 == 0 && controller.Right == 0)
         {
-            pwm[3] = 0;
+            C610[6] = output_int16_zero & 0xFF;        // 下位バイト
+            C610[7] = (output_int16_zero >> 8) & 0xFF; // 上位バイト
         }
 
         if (controller.Right == 1)
         {
-            pwm[3] = -10000;
+            printf("Right\n");
+            signed_speed = static_cast<int16_t>(10000);
+            C610[6] = signed_speed & 0xFF;         // 下位バイト
+            C610[7] = -(signed_speed >> 8) & 0xFF; // 上位バイト
         }
         ///////////////////////////////////////////////////////
         auto now = HighResClock::now();
@@ -223,17 +241,20 @@ void can_send()
     auto now_1 = HighResClock::now();
     if (now_1 - pre_1 > 30ms)
     {
-        printf(
-            "Higher_Reload = %1d  "
-            "Lower_Reload = %2d  "
-            "Higher_stop = %3d  "
-            "Lower_stop = %4d\n",
-            Flags::Higher_Reload,
-            Flags::Lower_Reload,
-            Flags::Higher_stop,
-            Flags::Lower_stop);
+        // printf(
+        //     "Higher_Reload = %1d  "
+        //     "Lower_Reload = %2d  "
+        //     "Higher_stop = %3d  "
+        //     "Lower_stop = %4d\n",
+        //     Flags::Higher_Reload,
+        //     Flags::Lower_Reload,
+        //     Flags::Higher_stop,
+        //     Flags::Lower_stop);
         CANMessage msg1(1, (const uint8_t *)pwm, 8);
         can.write(msg1);
+        CANMessage msgC610(0x1FF, C610, 8);
+        can2.write(msgC610);
+
         if (penguin_1.send() && penguin_2.send())
         {
             // printf("can OK \n");
