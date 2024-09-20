@@ -10,24 +10,18 @@ int signed_speed = 0;
 int speed = 10000;
 void motor_move(int speed)
 {
-    penguin_1.pwm[1] = -speed;
-    penguin_1.pwm[2] = -speed;
-    penguin_1.pwm[3] = speed;
-    penguin_2.pwm[0] = speed;
+    penguin_1.pwm[1] = -speed; // 左
+    penguin_2.pwm[0] = speed;  // 右
 }
 
 void fire_under(int speed)
 {
     penguin_1.pwm[0] = -speed;
-    penguin_2.pwm[1] = -speed;
 }
 
 void handle_higher()
 {
-    // printf("Higher_count==%d\n", ints::Higher_count);
-    // printf("Lower_count==%d\n", ints::Lower_count);
-    // printf("Higher_Reload==%d\n", ints::Higher_Reload);
-    // printf("Lower_Reload==%d\n", ints::Lower_Reload);
+
     ints::Higher_count += !Flags::Higher_stop ? 1 : -1;
     ints::Higher_count = clamp(ints::Higher_count, 0, 15);
     if (ints::Higher_count == 10 && !Flags::Higher_flag && !Higher_lock)
@@ -60,7 +54,7 @@ void handle_lower()
 
 void higher_reload()
 {
-    ints::Higher_Reload += !Flags::Higher_Reload ? -1 : 1;
+    ints::Higher_Reload += !Flags::Higher_Reload ? 1 : -1;
     ints::Higher_Reload = clamp(ints::Higher_Reload, 0, 15);
     if (ints::Higher_Reload == 10 && !Flags::Higher_Reload)
     {
@@ -77,7 +71,7 @@ void higher_reload()
 
 void lower_reload()
 {
-    ints::Lower_Reload += !Flags::Lower_Reload ? -1 : 1;
+    ints::Lower_Reload += !Flags::Lower_Reload ? 1 : -1;
     ints::Lower_Reload = clamp(ints::Lower_Reload, 0, 15);
     if (ints::Lower_Reload == 10 && !Flags::Lower_Reload)
     {
@@ -92,6 +86,23 @@ void lower_reload()
     }
 }
 
+void read_stop()
+{
+    handle_higher();
+    handle_lower();
+    higher_reload();
+    lower_reload();
+}
+
+void read_swich()
+{
+    Flags::Higher_stop = Buttons::Higher_stop.read();
+    Flags::Lower_stop = Buttons::Lower_stop.read();
+    Flags::Higher_Reload = Buttons::Higher_Reload.read();
+    Flags::Lower_Reload = Buttons::Lower_Reload.read();
+    Flags::Higher_fire = Buttons::Higher_fire.read();
+    Flags::Lower_fire = Buttons::Lower_fire.read();
+}
 void higher_fire()
 {
     ints::Higher_fire += Flags::Higher_fire ? 1 : -1;
@@ -122,22 +133,6 @@ void lower_fire()
     }
 }
 
-void read_stop()
-{
-    handle_higher();
-    handle_lower();
-    higher_reload();
-    lower_reload();
-}
-
-void read_swich()
-{
-    Flags::Higher_stop = Buttons::Higher_stop.read();
-    Flags::Lower_stop = Buttons::Lower_stop.read();
-    Flags::Higher_Reload = Buttons::Higher_Reload.read();
-    Flags::Lower_Reload = Buttons::Lower_Reload.read();
-}
-
 void Setup()
 {
     Higher_lock = true;
@@ -146,6 +141,8 @@ void Setup()
     Buttons::Lower_stop.mode(PullUp);
     Buttons::Higher_Reload.mode(PullUp);
     Buttons::Lower_Reload.mode(PullUp);
+    Buttons::Higher_fire.mode(PullUp);
+    Buttons::Lower_fire.mode(PullUp);
 }
 
 void controler()
@@ -172,65 +169,86 @@ void controler()
         controller.Start = (msg.data[5] >> 6) & 0x01;
         controller.Select = (msg.data[5] >> 7) & 0x01;
 
-        // printf("Circle: %d, Cross: %d, Square: %d, Triangle: %d\n", controller.Circle, controller.Cross, controller.Square, controller.Triangle);
-        // printf(" Right: %d, DOWN: %d\n", controller.Right, controller.Down);
-        // printf(" R1: %d\n", controller.R1);
-        // printf("L3: %d, R3: %d, Start: %d, Select: %d\n", controller.L3, controller.R3, controller.Start, controller.Select);
+        // printf("|  Circle: %3d  |  Cross: %3d  |  Square: %3d  |  Triangle: %3d  |  Up : %3d  |  Down : %3d  |  Right : %3d  |  left : %3d  |  R1 : %3d  |  L1 : %3d   |\n ",
+        //    controller.Circle, controller.Cross, controller.Square, controller.Triangle,
+        //    controller.Up, controller.Down, controller.Right, controller.Right,
+        //    controller.R1, controller.L1);
 
-        ///////////////////////////////////////////////////////
-        if (controller.L1 == 1)
-        {
-            printf("L1\n");
-            signed_speed = static_cast<int16_t>(10000);
-            C610[4] = signed_speed & 0xFF;         // 下位バイト
-            C610[5] = -(signed_speed >> 8) & 0xFF; // 上位バイト
-        }
-        if (controller.L1 == 0 && controller.Down == 0)
-        {
-            C610[4] = output_int16_zero & 0xFF;        // 下位バイト
-            C610[5] = (output_int16_zero >> 8) & 0xFF; // 上位バイト
-        }
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // if (controller.L1 == 1)
+        // {
 
-        if (controller.Down == 1)
-        {
-            printf("Down\n");
-            signed_speed = static_cast<int16_t>(10000);
-            C610[4] = -signed_speed & 0xFF;       // 下位バイト
-            C610[5] = (signed_speed >> 8) & 0xFF; // 上位バイト
-        }
-        ///////////////////////////////////////////////////////
-        if (controller.R1 == 1)
-        {
-            signed_speed = static_cast<int16_t>(10000);
-            C610[6] = -signed_speed & 0xFF;        // 下位バイト
-            C610[7] = (signed_speed >> 8) & 0xFF; // 上位バイト
-            printf("signed_speed%d\n,", signed_speed);
-        }
-        if (controller.R1 == 0 && controller.Right == 0)
-        {
-            C610[6] = output_int16_zero & 0xFF;        // 下位バイト
-            C610[7] = (output_int16_zero >> 8) & 0xFF; // 上位バイト
-        }
+        //     signed_speed = static_cast<int16_t>(14000);
+        //     C610[4] = signed_speed & 0xFF;         // 下位バイト
+        //     C610[5] = -(signed_speed >> 8) & 0xFF; // 上位バイト
+        // }
+        // if (controller.L1 == 0 && controller.Left == 0)
+        // {
+        //     C610[4] = output_int16_zero & 0xFF;        // 下位バイト
+        //     C610[5] = (output_int16_zero >> 8) & 0xFF; // 上位バイト
+        // }
 
-        if (controller.Right == 1)
-        {
-            printf("Right\n");
-            signed_speed = static_cast<int16_t>(10000);
-            C610[6] = signed_speed & 0xFF;         // 下位バイト
-            C610[7] = -(signed_speed >> 8) & 0xFF; // 上位バイト
-        }
-        ///////////////////////////////////////////////////////
+        // if (controller.Up == 1)
+        // {
+
+        //     signed_speed = static_cast<int16_t>(14000);
+        //     C610[4] = -signed_speed & 0xFF;       // 下位バイト
+        //     C610[5] = (signed_speed >> 8) & 0xFF; // 上位バイト
+        // }
+        // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // if (controller.R1 == 1)
+        // {
+        //     signed_speed = static_cast<int16_t>(14000);
+        //     C610[6] = signed_speed & 0xFF;         // 下位バイト
+        //     C610[7] = -(signed_speed >> 8) & 0xFF; // 上位バイト
+        // }
+        // if (controller.R1 == 0 && controller.Right == 0)
+        // {
+        //     C610[6] = output_int16_zero & 0xFF;        // 下位バイト
+        //     C610[7] = (output_int16_zero >> 8) & 0xFF; // 上位バイト
+        // }
+
+        // if (controller.Down == 1)
+        // {
+
+        //     signed_speed = static_cast<int16_t>(14000);
+        //     C610[6] = -signed_speed & 0xFF;       // 下位バイト
+        //     C610[7] = (signed_speed >> 8) & 0xFF; // 上位バイト
+        // }
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
         auto now = HighResClock::now();
         if (now - pre > 1000ms && controller.Circle == 1 && Higher_lock)
         {
+
             Higher_lock = false;
             motor_move(ints::Higher_speed);
             pre = now;
         }
         if (now - pre > 1000ms && controller.Square == 1 && Lowre_lock)
         {
+
             Lowre_lock = false;
             fire_under(ints::Lower_speed);
+            pre = now;
+        }
+        if (now - pre > 500ms && controller.Triangle == 1)
+        {
+            ints::Lower_speed += 50;
+            pre = now;
+        }
+        if (now - pre > 500ms && controller.Cross == 1)
+        {
+            ints::Lower_speed -= 50;
+            pre = now;
+        }
+        if (now - pre > 500ms && controller.R1 == 1)
+        {
+            ints::Lower_speed += 1000;
+            pre = now;
+        }
+        if (now - pre > 500ms && controller.L1 == 1)
+        {
+            ints::Lower_speed -= 1000;
             pre = now;
         }
     }
@@ -242,14 +260,18 @@ void can_send()
     if (now_1 - pre_1 > 30ms)
     {
         // printf(
-        //     "Higher_Reload = %1d  "
-        //     "Lower_Reload = %2d  "
-        //     "Higher_stop = %3d  "
+        //     "Higher_Reload = %1d
+        //     "Lower_Reload = %2d
+        //     "Higher_stop = %3d
         //     "Lower_stop = %4d\n",
         //     Flags::Higher_Reload,
         //     Flags::Lower_Reload,
         //     Flags::Higher_stop,
         //     Flags::Lower_stop);
+        printf("ints::Higher_speed %d | ints::Lower_speed %d\n", ints::Higher_speed, ints::Lower_speed);
+        // printf("H_fire:%d L_fire:%d\n", Flags::Higher_fire, Flags::Lower_fire);
+        // printf("Higher_count : %1d | Lower_count : %2d | Higher_Reload : %d | Lower_Reload : %1d\n", ints::Higher_count, ints::Lower_count, ints::Higher_Reload, ints::Lower_Reload);
+        // printf("H_fire:%d L_fire:%d\n", Flags::Higher_fire, Flags::Lower_fire);
         CANMessage msg1(1, (const uint8_t *)pwm, 8);
         can.write(msg1);
         CANMessage msgC610(0x1FF, C610, 8);
@@ -284,5 +306,18 @@ int main()
         read_stop();
         controler();
         can_send();
+        auto now_5 = HighResClock::now();
+        if (now_5 - pre > 1000ms && !Flags::Higher_fire && Higher_lock)
+        {
+            Higher_lock = false;
+            motor_move(ints::Higher_speed);
+            pre = now_5;
+        }
+        if (now_5 - pre > 500ms && !Flags::Lower_fire && Lowre_lock)
+        {
+            Lowre_lock = false;
+            fire_under(ints::Lower_speed);
+            pre = now_5;
+        }
     }
 }
