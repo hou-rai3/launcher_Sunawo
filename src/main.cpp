@@ -4,32 +4,35 @@
 
 bool Higher_lock = false;
 bool Lowre_lock = false;
-
+bool Higher_R_lock = false;
+bool Lowre_R_lock = false;
 int output_int16_zero = 0;
 int signed_speed = 0;
 int speed = 10000;
 
+// motor_move関数とfire_under関数の定義はmotor.cppに移動
 void motor_move(int speed)
 {
     penguin_1.pwm[1] = -speed; // 左
     penguin_2.pwm[0] = speed;  // 右
+    printf("motor_move called with speed: %d\n", speed);
 }
 
 void fire_under(int speed)
 {
     penguin_1.pwm[0] = -speed;
+    printf("fire_under called with speed: %d\n", speed);
 }
-
 void handle_higher()
 {
-
     ints::Higher_count += !Flags::Higher_stop ? 1 : -1;
-    ints::Higher_count = clamp(ints::Higher_count, 0, 15);
-    if (ints::Higher_count == 10 && !Flags::Higher_flag && !Higher_lock)
+    ints::Higher_count = clamp(ints::Higher_count, 0, 100);
+    if (ints::Higher_count == 75 && !Flags::Higher_flag && !Higher_lock)
     {
+        Higher_R_lock = false;
         Flags::Higher_flag = true;
-        motor_move(3000);
         printf("handle_higher\n");
+        motor_move(3000);
     }
     if (ints::Higher_count == 0)
     {
@@ -40,9 +43,10 @@ void handle_higher()
 void handle_lower()
 {
     ints::Lower_count += !Flags::Lower_stop ? 1 : -1;
-    ints::Lower_count = clamp(ints::Lower_count, 0, 15);
-    if (ints::Lower_count == 10 && !Flags::Lower_flag && !Lowre_lock)
+    ints::Lower_count = clamp(ints::Lower_count, 0, 100);
+    if (ints::Lower_count == 50 && !Flags::Lower_flag && !Lowre_lock)
     {
+        Lowre_R_lock = false;
         Flags::Lower_flag = true;
         fire_under(3000);
         printf("handle_lower\n");
@@ -56,8 +60,8 @@ void handle_lower()
 void higher_reload()
 {
     ints::Higher_Reload += !Flags::Higher_Reload ? 1 : -1;
-    ints::Higher_Reload = clamp(ints::Higher_Reload, 0, 15);
-    if (ints::Higher_Reload == 10 && !Flags::Higher_Reload)
+    ints::Higher_Reload = clamp(ints::Higher_Reload, 0, 200);
+    if (ints::Higher_Reload == 200 && !Flags::Higher_Reload && !Higher_R_lock)
     {
         Higher_lock = true;
         Flags::Higher_Reload = true;
@@ -73,8 +77,8 @@ void higher_reload()
 void lower_reload()
 {
     ints::Lower_Reload += !Flags::Lower_Reload ? 1 : -1;
-    ints::Lower_Reload = clamp(ints::Lower_Reload, 0, 15);
-    if (ints::Lower_Reload == 10 && !Flags::Lower_Reload)
+    ints::Lower_Reload = clamp(ints::Lower_Reload, 0, 10);
+    if (ints::Lower_Reload == 10 && !Flags::Lower_Reload && !Lowre_R_lock)
     {
         Lowre_lock = true;
         Flags::Lower_Reload = true;
@@ -111,6 +115,8 @@ void Setup()
 {
     Higher_lock = true;
     Lowre_lock = true;
+    Higher_R_lock = true;
+    Lowre_R_lock = true;
     Buttons::mode1.mode(PullUp);
     Buttons::mode2.mode(PullUp);
     Buttons::Higher_stop.mode(PullUp);
@@ -145,16 +151,16 @@ void controler()
         controller.Start = (msg.data[5] >> 6) & 0x01;
         controller.Select = (msg.data[5] >> 7) & 0x01;
 
-        // printf("|  Circle: %3d  |  Cross: %3d  |  Square: %3d  |  Triangle: %3d  |  Up : %3d  |  Down : %3d  |  Right : %3d  |  left : %3d  |  R1 : %3d  |  L1 : %3d   |\n ",
-        //    controller.Circle, controller.Cross, controller.Square, controller.Triangle,
-        //    controller.Up, controller.Down, controller.Right, controller.Right,
-        //    controller.R1, controller.L1);
+        // printf("|  Circle: %3d  |  Cross: %3d  |  Square: %3d  |  Triangle: %3d  |  Up : %3d  |  Down : %3d  |  Right : %3d  |  left : %3d  |  R1 : %3d  |  L1 : %3d   |  R2 : %3d  |  L2 : %3d   |\n ",
+        //        controller.Circle, controller.Cross, controller.Square, controller.Triangle,
+        //        controller.Up, controller.Down, controller.Right, controller.Right,
+        //        controller.R1, controller.L1, controller.R2, controller.L2);
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
         if (controller.L1 == 1)
         {
-            signed_speed = static_cast<int16_t>(1000);
-            C610[4] = -signed_speed & 0xFF;         // 下位バイト
+            signed_speed = static_cast<int16_t>(2000);
+            C610[4] = -signed_speed & 0xFF;       // 下位バイト
             C610[5] = (signed_speed >> 8) & 0xFF; // 上位バイト
         }
         if (controller.L1 == 0 && controller.Left == 0) // 上げるとき、かごが跳ねるので、出力をローパスにしよう
@@ -164,8 +170,8 @@ void controler()
         }
         if (controller.Up == 1)
         {
-            signed_speed = static_cast<int16_t>(1000);
-            C610[4] = signed_speed & 0xFF;       // 下位バイト
+            signed_speed = static_cast<int16_t>(2000);
+            C610[4] = signed_speed & 0xFF;         // 下位バイト
             C610[5] = -(signed_speed >> 8) & 0xFF; // 上位バイト
         }
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
